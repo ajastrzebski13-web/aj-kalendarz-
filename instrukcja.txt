@@ -1,0 +1,8 @@
+AJ Kalendarz — PRO+ (auto-prompt + pełny offline)
+Docelowa domena: https://aj-kalendarz.vercel.app/
+
+1) Na Vercel ustaw projekt/alias na aj-kalendarz.vercel.app
+2) Wgraj WSZYSTKIE pliki z ZIP do katalogu głównego (tam gdzie index.html)
+3) Otwórz ONLINE https://aj-kalendarz.vercel.app/ w Chrome (Android) — po 1–2 s pojawi się okno instalacji
+4) Po instalacji działa OFFLINE (cache-first)
+5) Jeśli Chrome trzyma starą wersję: wyczyść dane witryny dla aj-kalendarz.vercel.app

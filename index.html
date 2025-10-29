@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AJ Kalendarz Treningowy</title>
+  <meta name="theme-color" content="#22c55e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    :root{--bg:#fff;--fg:#111}
+    html.dark{--bg:#121212;--fg:#eee}
+    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    .install-bar{position:sticky;top:0;z-index:10000;display:none;align-items:center;gap:12px;padding:10px 14px;background:#d32f2f;color:#fff;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+    .aj-logo{width:28px;height:28px;border-radius:6px;background:#22c55e;display:flex;align-items:center;justify-content:center;font-weight:800}
+    .install-text{flex:1;font-weight:700}
+    .install-btn{background:#fff;color:#d32f2f;border:none;font-weight:800;padding:8px 12px;border-radius:10px;cursor:pointer}
+    .dark-toggle{position:fixed;right:16px;bottom:16px;z-index:10000;border:none;border-radius:999px;padding:10px 12px;background:#111;color:#fff;font-weight:700;opacity:.9}
+  </style>
+</head>
+<body>
+  <div id="installBar" class="install-bar" role="region" aria-label="Instalacja aplikacji">
+    <div class="aj-logo" aria-hidden="true">AJ</div>
+    <div class="install-text">Zainstaluj aplikację AJ Kalendarz</div>
+    <button id="installBtn" class="install-btn">Zainstaluj</button>
+  </div>
+
+  <button id="darkToggle" class="dark-toggle" title="Tryb ciemny">🌙</button>
+
+  <script>
+  (function(){
+    // Tryb ciemny
+    const dKey='aj-dark'; const root=document.documentElement;
+    function apply(v){ if(v==='1') root.classList.add('dark'); else root.classList.remove('dark'); }
+    try{ apply(localStorage.getItem(dKey)); }catch(e){}
+    const t=document.getElementById('darkToggle');
+    if(t){ t.textContent=root.classList.contains('dark')?'☀️':'🌙';
+      t.addEventListener('click',()=>{const v=root.classList.contains('dark')?'0':'1';try{localStorage.setItem(dKey,v)}catch(e){};apply(v);t.textContent=v==='1'?'☀️':'🌙';});
+    }
+
+    // Instalacja (obejście heurystyki + auto prompt)
+    let deferredPrompt=null;
+    const bar=document.getElementById('installBar');
+    const btn=document.getElementById('installBtn');
+    const isStandalone=window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+    function showBar(){ if(bar) bar.style.display='flex'; }
+    function hideBar(){ if(bar) bar.style.display='none'; }
+
+    if(!isStandalone) showBar();
+
+    window.addEventListener('beforeinstallprompt', (e)=>{
+      e.preventDefault();
+      deferredPrompt=e; showBar();
+      setTimeout(async()=>{
+        if(deferredPrompt && deferredPrompt.prompt) {
+          try{ 
+            window.scrollTo(0,1); window.scrollTo(0,0);
+            document.body.dispatchEvent(new Event('click'));
+            deferredPrompt.prompt();
+            const res=await deferredPrompt.userChoice;
+            if(res && res.outcome==='accepted') hideBar();
+            deferredPrompt=null;
+          }catch(_){
+          }
+        }
+      }, 1200);
+    });
+
+    async function tryInstall(){
+      if(deferredPrompt && deferredPrompt.prompt){
+        deferredPrompt.prompt();
+        const r = await deferredPrompt.userChoice;
+        deferredPrompt=null;
+        if(r && r.outcome==='accepted'){ hideBar(); return true; }
+      }
+      return false;
+    }
+
+    async function forceInstall(){
+      const ok = await tryInstall();
+      if(!ok){
+        alert('Jeśli nie pojawia się okno instalacji:\n1) Kliknij ⋮ w Chrome\n2) Wybierz „Zainstaluj aplikację”.\nPo instalacji aplikacja działa offline.');
+      }
+    }
+    if(btn) btn.addEventListener('click', forceInstall);
+
+    window.addEventListener('appinstalled', ()=>{ hideBar(); alert('✅ AJ Kalendarz został zainstalowany i działa offline.'); });
+
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', ()=>{ navigator.serviceWorker.register('/sw.js').catch(()=>{}); });
+    }
+  })();
+  </script>
+</body>
+</html>
