@@ -1,96 +1,375 @@
 <!doctype html>
 <html lang="pl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>AJ Kalendarz Treningowy</title>
-  <meta name="theme-color" content="#22c55e">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <link rel="manifest" href="/manifest.json">
-  <style>
-    :root{--bg:#fff;--fg:#111}
-    html.dark{--bg:#121212;--fg:#eee}
-    body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-    .install-bar{position:sticky;top:0;z-index:10000;display:none;align-items:center;gap:12px;padding:10px 14px;background:#d32f2f;color:#fff;box-shadow:0 8px 20px rgba(0,0,0,.25)}
-    .aj-logo{width:28px;height:28px;border-radius:6px;background:#22c55e;display:flex;align-items:center;justify-content:center;font-weight:800}
-    .install-text{flex:1;font-weight:700}
-    .install-btn{background:#fff;color:#d32f2f;border:none;font-weight:800;padding:8px 12px;border-radius:10px;cursor:pointer}
-    .dark-toggle{position:fixed;right:16px;bottom:16px;z-index:10000;border:none;border-radius:999px;padding:10px 12px;background:#111;color:#fff;font-weight:700;opacity:.9}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arek Jastrzębski – kalendarz treningów personalnych</title>
+<meta name="theme-color" content="#22c55e">
+<style>
+:root{--g1:#22c55e;--g2:#0f8f3f;--panel:#f0fbf3;--line:#d9f4df;--ink:#0f172a;--muted:#64748b;--hours-bg:#f7fcf8}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:#fff}
+.topbar{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,var(--g1),var(--g2));color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.brand .title{font-weight:900;letter-spacing:.2px;text-shadow:0 2px 6px rgba(0,0,0,.2)}
+.controls-top{display:flex;align-items:center;gap:8px}
+.btn{background:rgba(255,255,255,.18);border:0;color:#fff;padding:8px 12px;border-radius:12px}
+#datePicker{appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.18);color:#fff;border:1px solid #ffffff66;border-radius:12px;padding:8px 10px}
+#datePicker::-webkit-calendar-picker-indicator{filter:invert(1) brightness(2)}
+.container{max-width:980px;margin:18px auto;padding:0 12px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0}
+.controls input,.controls select{border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-height:46px}
+.controls .grow{flex:1 1 240px}
+.primary{background:linear-gradient(180deg,var(--g1),var(--g2));color:#fff;border:0;border-radius:14px;padding:12px 18px;box-shadow:0 8px 22px rgba(16,185,129,.25)}
+.tag{font-size:12px;color:#0f172a;opacity:.8}
+.grid{display:grid;grid-template-columns:110px 1fr;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 8px 28px rgba(16,185,129,.08)}
+.hours{background:var(--hours-bg);border-right:1px solid var(--line)}
+.hours .cell{height:46px;display:flex;align-items:flex-start;justify-content:flex-end;padding:8px 12px;font-size:12px;color:#0b5d2a;border-bottom:1px solid var(--line);cursor:pointer}
+.sessions{position:relative;background:#fff}
+.sessions .row{height:46px;border-bottom:1px solid #eef6ef;cursor:pointer}
+.entry{position:absolute;left:10px;right:10px;background:var(--panel);border:1px solid #bfeec8;color:#064e3b;border-radius:14px;padding:10px 12px;box-shadow:0 6px 18px rgba(16,185,129,.15);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.entry .meta{font-size:12px;opacity:.8}.entry .name{font-weight:800}.entry .kind{font-size:11px;opacity:.85}
+.entry.exhausted{opacity:.55;filter:saturate(.8)}
+.icon{background:transparent;border:0;color:#064e3b;cursor:pointer}
+.sheet-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.25);backdrop-filter:blur(2px);z-index:45;display:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top-left-radius:18px;border-top-right-radius:18px;box-shadow:0 -12px 40px rgba(0,0,0,.22);z-index:55;transform:translateY(100%);transition:transform .25s ease}
+.sheet.show{transform:translateY(0)}
+.sheet-handle{width:54px;height:5px;background:#cbd5e1;border-radius:999px;margin:10px auto 14px}
+.sheet-close{margin:12px auto 20px;display:block;background:linear-gradient(180deg,var(--g1),var(--g2));color:#fff;border:0;border-radius:12px;padding:12px 18px}
+.sheet-title{font-weight:800;font-size:18px;margin:0 16px 8px}
+.sheet-meta{color:#334155;margin:0 16px 12px}
+.sheet-table-wrap{max-height:52vh;overflow:auto;margin:0 16px 16px}
+.sheet-table{width:100%;border-collapse:collapse;font-size:14px}
+.sheet-table th,.sheet-table td{border-bottom:1px solid #e2e8f0;padding:8px;text-align:left}
+.footer{text-align:center;color:#1e293b;opacity:.9;padding:18px 12px;font-size:12px;margin:14px 0}
+@media (max-width:560px){.grid{grid-template-columns:90px 1fr}.hours .cell{height:44px}.sessions .row{height:44px}}
+@media print{.print-hide, header .controls-top .btn { display:none!important;}header{position:static!important;box-shadow:none!important}.container{margin:0;max-width:100%;padding:0 6mm}.grid{box-shadow:none;border:1px solid #ddd}}
+/* Splash */
+#splash{position:fixed;inset:0;background:linear-gradient(135deg,var(--g1),var(--g2));display:grid;place-items:center;z-index:60;animation:fadeOut .6s ease 1.4s forwards}
+#splash .logo{width:168px;height:168px;border-radius:28px;background:radial-gradient(120px 120px at 30% 30%,#ffffff30,transparent), linear-gradient(135deg,var(--g2),var(--g1));display:grid;place-items:center;box-shadow:0 16px 40px rgba(0,0,0,.25);transform:scale(.82);animation:pop .9s cubic-bezier(.2,.7,.2,1) .1s forwards}
+#splash .logo span{font-weight:900;font-size:64px;color:#fff;text-shadow:0 6px 18px rgba(0,0,0,.28)}
+@keyframes pop{to{transform:scale(1)}}
+@keyframes fadeOut{to{opacity:0;visibility:hidden}}
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icons/aj-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/aj-192.png">
+
+<style>
+  .aj-top-install{position:sticky;top:0;z-index:2147483647;display:none;gap:12px;align-items:center;padding:10px 14px;background:#d32f2f;color:#fff;box-shadow:0 8px 20px rgba(0,0,0,.18);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .aj-top-install__logo{width:26px;height:26px;border-radius:6px;background:#22c55e;display:flex;align-items:center;justify-content:center;font-weight:800}
+  .aj-top-install__text{flex:1;font-weight:700}
+  .aj-top-install__btn{background:#fff;color:#d32f2f;border:none;font-weight:800;padding:8px 12px;border-radius:10px;cursor:pointer}
+</style>
+
 </head>
 <body>
-  <div id="installBar" class="install-bar" role="region" aria-label="Instalacja aplikacji">
-    <div class="aj-logo" aria-hidden="true">AJ</div>
-    <div class="install-text">Zainstaluj aplikację AJ Kalendarz</div>
-    <button id="installBtn" class="install-btn">Zainstaluj</button>
+<div id="splash"><div class="logo"><span>AJ</span></div></div>
+<header class="topbar">
+  <div class="brand"><div class="title">Arek Jastrzębski – kalendarz treningów personalnych</div></div>
+  <div class="controls-top">
+    <button id="prevDay" class="btn" aria-label="Poprzedni dzień">◀</button>
+    <input id="datePicker" type="date" aria-label="Data">
+    <button id="nextDay" class="btn" aria-label="Następny dzień">▶</button>
+    <button id="exportPdf" class="btn" aria-label="Eksportuj do PDF">🖨️ PDF</button>
+    <button id="closeBtn" class="btn" aria-label="Zamknij">✖</button>
   </div>
-
-  <button id="darkToggle" class="dark-toggle" title="Tryb ciemny">🌙</button>
-
-  <script>
-  (function(){
-    // Tryb ciemny
-    const dKey='aj-dark'; const root=document.documentElement;
-    function apply(v){ if(v==='1') root.classList.add('dark'); else root.classList.remove('dark'); }
-    try{ apply(localStorage.getItem(dKey)); }catch(e){}
-    const t=document.getElementById('darkToggle');
-    if(t){ t.textContent=root.classList.contains('dark')?'☀️':'🌙';
-      t.addEventListener('click',()=>{const v=root.classList.contains('dark')?'0':'1';try{localStorage.setItem(dKey,v)}catch(e){};apply(v);t.textContent=v==='1'?'☀️':'🌙';});
-    }
-
-    // Instalacja (obejście heurystyki + auto prompt)
-    let deferredPrompt=null;
-    const bar=document.getElementById('installBar');
-    const btn=document.getElementById('installBtn');
-    const isStandalone=window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-    function showBar(){ if(bar) bar.style.display='flex'; }
-    function hideBar(){ if(bar) bar.style.display='none'; }
-
-    if(!isStandalone) showBar();
-
-    window.addEventListener('beforeinstallprompt', (e)=>{
-      e.preventDefault();
-      deferredPrompt=e; showBar();
-      setTimeout(async()=>{
-        if(deferredPrompt && deferredPrompt.prompt) {
-          try{ 
-            window.scrollTo(0,1); window.scrollTo(0,0);
-            document.body.dispatchEvent(new Event('click'));
-            deferredPrompt.prompt();
-            const res=await deferredPrompt.userChoice;
-            if(res && res.outcome==='accepted') hideBar();
-            deferredPrompt=null;
-          }catch(_){
-          }
-        }
-      }, 1200);
+</header>
+<main class="container">
+  <section class="controls">
+    <input id="nameInput" class="grow" placeholder="Imię i nazwisko">
+    <input id="timeInput" type="time" step="1800" value="06:00">
+    <select id="kindInput">
+      <option value="single">Trening pojedynczy</option>
+      <option value="package-5">Pakiet 5</option>
+      <option value="package-10">Pakiet 10</option>
+      <option value="package-15">Pakiet 15</option>
+      <option value="package-20">Pakiet 20</option>
+    </select>
+    <input id="noteInput" class="grow" placeholder="Notatka (opcjonalnie)">
+    <button id="addBtn" class="primary">➕ Dodaj</button>
+    <span class="tag">Filtr:</span>
+    <select id="personFilter"><option value="__all__">Wszyscy</option></select>
+    <button id="menuBtn" class="btn">⚙️</button>
+  </section>
+  <section class="grid">
+    <div class="hours" id="hours"></div>
+    <div class="sessions" id="sessions" aria-live="polite"></div>
+  </section>
+</main>
+<div id="sheetBackdrop" class="sheet-backdrop"></div>
+<aside id="sheet" class="sheet" aria-hidden="true" aria-label="Panel">
+  <div class="sheet-handle"></div>
+  <div id="sheetContent"></div>
+  <button id="sheetClose" class="sheet-close">Zamknij</button>
+</aside>
+<footer class="footer print-hide">AJ KALENDARZ PRO • <span id="year"></span> • opracował: <b>Arek Jastrzębski</b></footer>
+<script>
+(function(){
+  const START_HOUR=6, END_HOUR=23;
+  const STORAGE_KEY='aj-finalv3-sessions'; const PEOPLE_KEY='aj-finalv3-people'; const PREFS_KEY='aj-finalv3-prefs';
+  const $=s=>document.querySelector(s);
+  const hoursEl=$('#hours'), sessionsEl=$('#sessions');
+  const nameInput=$('#nameInput'), timeInput=$('#timeInput'), kindInput=$('#kindInput'), noteInput=$('#noteInput'), addBtn=$('#addBtn');
+  const dp=$('#datePicker'), prevBtn=$('#prevDay'), nextBtn=$('#nextDay'), closeBtn=$('#closeBtn'), exportBtn=$('#exportPdf');
+  const filterSel=$('#personFilter'); const menuBtn=$('#menuBtn');
+  const sheet=$('#sheet'), sheetBackdrop=$('#sheetBackdrop'), sheetContent=$('#sheetContent'), sheetClose=$('#sheetClose');
+  document.getElementById('year').textContent=new Date().getFullYear();
+  setTimeout(()=>{ const s=document.getElementById('splash'); if(s) s.style.display='none'; }, 1400);
+  const vibrate=ms=>{ if('vibrate' in navigator) navigator.vibrate(ms||60); };
+  const toISO=d=>d.toISOString().split('T')[0];
+  const fromISO=iso=>{ const [y,m,d]=iso.split('-').map(Number); return new Date(y,m-1,d); };
+  const mFrom=t=>{ const [h,m]=t.split(':').map(Number); return h*60+m; };
+  const mm=(h,m)=>`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  const esc=s=>s?String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])):s;
+  let prefs=JSON.parse(localStorage.getItem(PREFS_KEY)||'{"slot":30}');
+  function setSlot(slot){ prefs.slot=slot; localStorage.setItem(PREFS_KEY,JSON.stringify(prefs)); buildGrid(); render(); timeInput.step=slot*60; }
+  function buildGrid(){
+    hoursEl.innerHTML=''; sessionsEl.innerHTML='';
+    const step=prefs.slot; const times=[];
+    for(let h=START_HOUR; h<END_HOUR; h++){ for(let m=0; m<60; m+=step){ times.push(mm(h,m)); } }
+    times.forEach((t)=>{
+      const c=document.createElement('div'); c.className='cell'; c.textContent=t;
+      c.addEventListener('click', ()=>{ timeInput.value=t; vibrate(10); });
+      hoursEl.appendChild(c);
+      const r=document.createElement('div'); r.className='row'; r.dataset.time=t;
+      r.addEventListener('click', ()=>{ timeInput.value=t; vibrate(10); });
+      sessionsEl.appendChild(r);
     });
+    sessionsEl.style.minHeight=(times.length*46)+'px';
+  }
+  let state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+  let people=JSON.parse(localStorage.getItem(PEOPLE_KEY)||'{}');
+  let currentDateISO=(new Date()).toISOString().split('T')[0]; dp.value=currentDateISO;
+  const save=()=>{ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); localStorage.setItem(PEOPLE_KEY,JSON.stringify(people)); };
+  const allSessions=()=>Object.values(state).flat();
+  const usedBy=name=>allSessions().filter(s=>s.name===name && s.kind.startsWith('package')).length;
+  function refillFilter(){
+    const names=Array.from(new Set(allSessions().map(s=>s.name))).sort((a,b)=>a.localeCompare(b,'pl'));
+    const selVal=filterSel.value;
+    filterSel.innerHTML='<option value="__all__">Wszyscy</option>'+names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    if([selVal,"__all__"].includes(selVal)) filterSel.value=selVal;
+  }
+  function render(){
+    [...sessionsEl.querySelectorAll('.entry')].forEach(e=>e.remove());
+    let day=(state[currentDateISO]||[]).slice().sort((a,b)=>mFrom(a.start)-mFrom(b.start));
+    const who=filterSel.value; if(who && who!=="__all__"){ day = day.filter(s=>s.name===who); }
+    const slotPx=46, step=prefs.slot;
+    day.forEach(item=>{
+      const topMin=mFrom(item.start)-START_HOUR*60; const top=(topMin/step)*slotPx+6;
+      const el=document.createElement('div'); el.className='entry';
+      const person=people[item.name]||{packageTotal:null}; const total=person.packageTotal; const used=usedBy(item.name);
+      if(typeof total==='number' && used>=total){ el.classList.add('exhausted'); }
+      el.style.top=top+'px'; el.style.height=(slotPx-10)+'px';
+      const isPkg=item.kind.startsWith('package'); const label=isPkg?`Pakiet ${item.packageTotal}`:'Pojedynczy';
+      const counter=(typeof total==='number')?` (${used}/${total})`:'';
+      el.innerHTML=`<div><div class="meta">${item.start}</div><div class="name">${esc(item.name)}${counter}</div></div>
+        <div class="btns"><span class="kind">${label}</span>
+          <button class="icon" data-act="info" title="Szczegóły">ℹ️</button>
+          <button class="icon" data-act="del" title="Usuń">✖</button></div>`;
+      el.querySelector('[data-act="del"]').onclick=()=>{ state[currentDateISO]=(state[currentDateISO]||[]).filter(x=>x.id!==item.id); save(); vibrate(30); render(); refillFilter(); };
+      el.querySelector('[data-act="info"]').onclick=()=>openDetails(item);
+      sessionsEl.appendChild(el);
+    });
+  }
+  function openDetails(item){
+    const name=item.name; const person=people[name]||{packageTotal:null}; const total=person.packageTotal;
+    const used=usedBy(name); const remaining=(typeof total==='number')?Math.max(total-used,0):null;
+    const pkgLine=(item.kind.startsWith('package')||typeof total==='number')
+      ? `<div><b>Pakiet:</b> ${used}${total?(' / '+total):''}${total?(' • pozostało: '+remaining):''}</div>`
+      : `<div><b>Pakiet:</b> —</div>`;
+    const note=item.note?`<div><b>Notatka:</b> ${item.note.replace(/</g,'&lt;')}</div>`:'';
+    sheetContent.innerHTML=`<div class="sheet-title">${name.replace(/</g,'&lt;')}</div>
+      <div class="sheet-meta">Godzina: ${item.start} • ${item.kind.startsWith('package')?('Pakiet '+(item.packageTotal||'')):'Pojedynczy'}</div>
+      ${pkgLine}${note}
+      <div style="margin:12px 16px 0;display:flex;gap:8px;flex-wrap:wrap">
+        <button id="editBtn" class="btn">✏️ Edytuj</button>
+        <button id="deleteBtn" class="btn">🗑 Usuń</button>
+        <button id="settingsBtn" class="btn">⚙️ Ustawienia</button>
+        <button id="statsBtn" class="btn">📊 Statystyki</button>
+      </div>`;
+    showSheet();
+    document.getElementById('deleteBtn').onclick=()=>{ state[currentDateISO]=(state[currentDateISO]||[]).filter(x=>x.id!==item.id); save(); vibrate(30); render(); refillFilter(); hideSheet(); };
+    document.getElementById('editBtn').onclick=()=>{ nameInput.value=item.name; timeInput.value=item.start; kindInput.value=item.kind; noteInput.value=item.note||''; hideSheet(); };
+    document.getElementById('settingsBtn').onclick=openSettings;
+    document.getElementById('statsBtn').onclick=openStats;
+  }
+  function openStats(){
+    const sessions=allSessions(); const total=sessions.length; const pkg=sessions.filter(s=>s.kind.startsWith('package')).length; const single=total-pkg;
+    const names=Object.keys(people).sort((a,b)=>a.localeCompare(b,'pl'));
+    const rows=names.map(n=>{ const used=usedBy(n); const t=(people[n]&&typeof people[n].packageTotal==='number')?people[n].packageTotal:null;
+      return `<tr><td>${n.replace(/</g,'&lt;')}</td><td>${used}</td><td>${t!==null?t:'—'}</td></tr>`; }).join('');
+    sheetContent.innerHTML=`<div class="sheet-title">Statystyki</div>
+      <div class="sheet-meta">Wszystkie: ${total} • Z pakietów: ${pkg} • Pojedyncze: ${single}</div>
+      <div class="sheet-table-wrap"><table class="sheet-table">
+        <thead><tr><th>Osoba</th><th>Wykorzystane</th><th>Pakiet (razem)</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="3">Brak danych</td></tr>'}</tbody>
+      </table></div>`;
+    showSheet();
+  }
+  function openSettings(){
+    const slot=prefs.slot;
+    sheetContent.innerHTML=`<div class="sheet-title">Ustawienia</div>
+      <div class="sheet-meta">Siatka czasu i dane</div>
+      <div style="margin:0 16px 12px">
+        <label style="display:block;margin-bottom:8px"><input type="radio" name="slot" value="30" ${slot==30?'checked':''}> Siatka co 30 min (domyślnie)</label>
+        <label style="display:block;margin-bottom:8px"><input type="radio" name="slot" value="15" ${slot==15?'checked':''}> Siatka co 15 min</label>
+        <div style="font-size:12px;color:#475569;margin-top:8px">Krok w polu godziny dopasuje się do siatki.</div>
+        <hr style="margin:12px 0;border:none;border-top:1px solid #e2e8f0">
+        <button id="clearBtn" class="btn">🧹 Wyczyść wszystkie dane</button>
+      </div>`;
+    showSheet();
+    sheetContent.querySelectorAll('input[name="slot"]').forEach(r=>{
+      r.addEventListener('change', e=>{ setSlot(parseInt(e.target.value,10)); });
+    });
+    document.getElementById('clearBtn').onclick=()=>{
+      if(confirm('Na pewno usunąć wszystkie zapisane dane?')){
+        localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(PEOPLE_KEY);
+        state={}; people={}; render(); refillFilter(); vibrate(80);
+      }
+    };
+  }
+  function showSheet(){ sheetBackdrop.style.display='block'; sheet.classList.add('show'); }
+  function hideSheet(){ sheet.classList.remove('show'); setTimeout(()=>{ sheetBackdrop.style.display='none'; },200); }
+  sheetBackdrop.addEventListener('click', hideSheet); sheetClose.addEventListener('click', hideSheet);
+  menuBtn.addEventListener('click', ()=>{
+    sheetContent.innerHTML=`<div class="sheet-title">Menu</div>
+      <div style="margin:0 16px 16px; display:flex; gap:8px; flex-wrap:wrap">
+        <button id="openStats" class="btn">📊 Statystyki</button>
+        <button id="openSettings" class="btn">⚙️ Ustawienia</button>
+      </div>`;
+    showSheet();
+    document.getElementById('openStats').onclick=openStats;
+    document.getElementById('openSettings').onclick=openSettings;
+  });
+  addBtn.onclick=()=>{
+    const name=nameInput.value.trim(); const start=timeInput.value||'06:00'; const kind=kindInput.value; const note=noteInput.value.trim();
+    if(!name){ nameInput.focus(); return; }
+    const list=state[currentDateISO]||[];
+    if(list.some(x=>x.start===start)){ alert('W tym czasie jest już trening.'); return; }
+    const s={ id:String(Math.random()).slice(2), name, start, kind, note:note||undefined };
+    const pkg=kind.startsWith('package')?parseInt(kind.split('-')[1],10):null;
+    if(pkg){ s.packageTotal=pkg; people[name]={packageTotal:pkg}; }
+    list.push(s); state[currentDateISO]=list; save(); vibrate(70); noteInput.value=''; render(); refillFilter();
+    if(!Array.from(filterSel.options).some(o=>o.value===name)){ const opt=document.createElement('option'); opt.value=name; opt.textContent=name; filterSel.appendChild(opt); }
+  };
+  prevBtn.onclick=()=>{ const d=fromISO(currentDateISO); d.setDate(d.getDate()-1); currentDateISO=toISO(d); dp.value=currentDateISO; render(); };
+  nextBtn.onclick=()=>{ const d=fromISO(currentDateISO); d.setDate(d.getDate()+1); currentDateISO=toISO(d); dp.value=currentDateISO; render(); };
+  dp.onchange=()=>{ currentDateISO=dp.value; render(); };
+  filterSel.onchange=()=>render();
+  closeBtn.onclick=()=>{ try{ window.close(); }catch(_){ alert('Dodaj do ekranu głównego, aby działało jak aplikacja.'); } };
+  document.getElementById('exportPdf').onclick=()=>{ window.print(); };
+  buildGrid(); render(); refillFilter(); timeInput.step=prefs.slot*60;
+})();
+</script>
+<script>
+// Register Service Worker for offline + installability
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(e){ console.warn('SW reg failed', e); });
+  });
+}
+</script>
+<button id="installBtn" style="position:fixed;right:16px;bottom:16px;padding:12px 16px;background:#22c55e;color:#fff;border:none;border-radius:12px;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.2);z-index:9999;cursor:pointer">+ Zainstaluj aplikację</button>
 
-    async function tryInstall(){
+
+<script>
+(function(){
+  var btn = document.getElementById('installBtn');
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (btn && isStandalone) btn.style.display = 'none';
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferredPrompt = e; });
+  if (btn) btn.addEventListener('click', async function(){
+    if (deferredPrompt && deferredPrompt.prompt) {
+      deferredPrompt.prompt();
+      var c = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if (c && c.outcome === 'accepted') btn.style.display='none';
+    } else {
+      alert('Jeśli nie widać okna instalacji, użyj: ⋮ → „Zainstaluj aplikację”.');
+    }
+  });
+  window.addEventListener('appinstalled', function(){
+    if (btn) btn.style.display='none';
+    alert('✅ Aplikacja AJ Kalendarz Treningowy została zainstalowana i działa offline.');
+  });
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('/sw.js').catch(function(e){ console.log('SW error:', e); });
+    });
+  }
+})();
+</script>
+
+
+<div id="ajTopInstall" class="aj-top-install" role="region" aria-label="Instalacja aplikacji">
+  <div class="aj-top-install__logo" aria-hidden="true">AJ</div>
+  <div class="aj-top-install__text">Zainstaluj aplikację AJ Kalendarz</div>
+  <button id="ajInstallBtn" class="aj-top-install__btn">Zainstaluj</button>
+</div>
+
+<script>
+(function(){
+  let deferredPrompt=null;
+  const bar=document.getElementById('ajTopInstall');
+  const btn=document.getElementById('ajInstallBtn');
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+  function showBar(){ if(bar) bar.style.display='flex'; }
+  function hideBar(){ if(bar) bar.style.display='none'; }
+
+  if(!isStandalone){ showBar(); } else { hideBar(); }
+
+  window.addEventListener('beforeinstallprompt', (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    showBar();
+    // delikatny auto-prompt po chwili (obejście heurystyki: lekki scroll + click)
+    setTimeout(async ()=>{
+      try{ window.scrollTo(0,1); window.scrollTo(0,0); document.body.dispatchEvent(new Event('click')); }catch(_){}
       if(deferredPrompt && deferredPrompt.prompt){
         deferredPrompt.prompt();
-        const r = await deferredPrompt.userChoice;
-        deferredPrompt=null;
-        if(r && r.outcome==='accepted'){ hideBar(); return true; }
+        const res = await deferredPrompt.userChoice;
+        if(res && res.outcome==='accepted'){ hideBar(); }
+        deferredPrompt = null;
       }
-      return false;
-    }
+    }, 1200);
+  });
 
-    async function forceInstall(){
-      const ok = await tryInstall();
-      if(!ok){
-        alert('Jeśli nie pojawia się okno instalacji:\n1) Kliknij ⋮ w Chrome\n2) Wybierz „Zainstaluj aplikację”.\nPo instalacji aplikacja działa offline.');
-      }
+  async function tryInstall(){
+    if(deferredPrompt && deferredPrompt.prompt){
+      deferredPrompt.prompt();
+      const res = await deferredPrompt.userChoice;
+      deferredPrompt=null;
+      if(res && res.outcome==='accepted'){ hideBar(); return true; }
     }
-    if(btn) btn.addEventListener('click', forceInstall);
+    return false;
+  }
 
-    window.addEventListener('appinstalled', ()=>{ hideBar(); alert('✅ AJ Kalendarz został zainstalowany i działa offline.'); });
-
-    if('serviceWorker' in navigator){
-      window.addEventListener('load', ()=>{ navigator.serviceWorker.register('/sw.js').catch(()=>{}); });
+  async function forceInstall(){
+    const ok = await tryInstall();
+    if(!ok){
+      alert('Jeśli nie pojawia się okno instalacji:\n1) Kliknij ⋮ w Chrome\n2) Wybierz „Zainstaluj aplikację”.\nPo instalacji aplikacja działa offline.');
     }
-  })();
-  </script>
+  }
+  if(btn){ btn.addEventListener('click', forceInstall); }
+
+  window.addEventListener('appinstalled', ()=>{
+    hideBar();
+    // krótka informacja po zainstalowaniu
+    try{ localStorage.setItem('aj-installed','1'); }catch(_){}
+    alert('✅ AJ Kalendarz zainstalowany. Działa offline.');
+  });
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('/sw.js').catch((e)=>console.log('SW error', e));
+    });
+  }
+})();
+</script>
+
 </body>
 </html>

@@ -1,13 +1,54 @@
-const CACHE_NAME='aj-pro-plus-v1';
-const PRECACHE=['/','/index.html','/manifest.json','/icons/icon-192.png','/icons/icon-512.png'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(PRECACHE)));self.skipWaiting()});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))));self.clients.claim()});
-self.addEventListener('fetch',e=>{
-  const r=e.request;
-  if(r.mode==='navigate'){
-    e.respondWith(fetch(r).catch(()=>caches.match('/index.html'))); return;
+const CACHE_NAME = 'aj-kalendarz-v1';
+const CORE_ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icons/aj-192.png',
+  './icons/aj-512.png',
+  './icons/aj-180.png'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(CORE_ASSETS)));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.map(k => (k === CACHE_NAME ? null : caches.delete(k)))))
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  // For navigation requests, try network first, fallback to cache, then to index.html
+  if (req.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(req);
+        return fresh;
+      } catch (e) {
+        const cached = await caches.match(req);
+        return cached || caches.match('./index.html');
+      }
+    })());
+    return;
   }
-  e.respondWith(caches.match(r).then(hit=>hit||fetch(r).then(resp=>{
-    const clone=resp.clone(); caches.open(CACHE_NAME).then(c=>c.put(r,clone)); return resp;
-  }).catch(()=>caches.match(r))));
+
+  // Cache-first for same-origin GET requests (static assets)
+  if (req.method === 'GET' && new URL(req.url).origin === location.origin) {
+    event.respondWith((async () => {
+      const cached = await caches.match(req);
+      if (cached) return cached;
+      try {
+        const res = await fetch(req);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(req, res.clone());
+        return res;
+      } catch (e) {
+        return caches.match('./index.html');
+      }
+    })());
+  }
 });
